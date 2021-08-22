@@ -1,0 +1,32 @@
+After watching the Project Video, I noticed that he had the word "find" in uppercases, so I did look up the command find.
+
+After looking it up in the internet we understood how to use it and the command line would be something like this.
+
+level00@SnowCrash:~$ find / -user flag00
+
+We get too much Errors so we dump them into /dev/null leaving us with only 2 paths related to flag00
+
+level00@SnowCrash:~$ find / -user flag00 2>/dev/null
+/usr/sbin/john
+/rofs/usr/sbin/john
+
+Now we check this path.
+
+level00@SnowCrash:~$ cat /usr/sbin/john
+cdiiddwpgswtgt
+
+We get what it looks like to be an encryption,
+
+Then we just go to dcode.fr, we paste the encryption there to find out that its a caesar encryption based on rot15.
+
+Then we use the same site to decrypt it finding: nottoohardhere
+
+So now we log into flag00 with this password
+
+level00@SnowCrash:~$ su flag00
+Password: nottoohardhere
+Don't forget to launch getflag !
+
+Then we just launch a simple get flag
+flag00@SnowCrash:~$ getflag
+Check flag.Here is your token : x24ti5gi3x0ol2eh4esiuxias

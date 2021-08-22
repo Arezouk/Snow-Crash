@@ -1,0 +1,114 @@
+We run a "ls -l" command in our home directory.
+
+level09@SnowCrash:~$ ls -l
+total 12
+-rwsr-sr-x 1 flag09 level09 7640 Mar  5  2016 level09
+----r--r-- 1 flag09 level09   26 Mar  5  2016 token
+
+We find a binary a token file with read permission.
+
+So we cat it.
+
+level09@SnowCrash:~$ cat token
+f4kmm6p|=�p�n��DB�Du{��
+
+We see that it contains non printable characters.
+
+Lets leave it for now and try to execute the binary with token and see.
+
+level09@SnowCrash:~$ ./level09 token
+tpmhr
+
+It appears that something happens to the string provided as argument.
+
+Lets trace it 1st and see what is being executed.
+
+level09@SnowCrash:~$ ltrace ./level09 token
+__libc_start_main(0x80487ce, 2, 0xbffff794, 0x8048aa0, 0x8048b10 <unfinished ...>
+ptrace(0, 0, 1, 0, 0xb7e2fe38)                                                                                                                                                                                                    = -1
+puts("You should not reverse this"You should not reverse this
+)                                                                                                                                                                                               = 28
++++ exited (status 1) +++
+
+WE noting that the function puts Tell us to not reverse something, so we do the contrary and reverse that something.
+
+After long search about what is that something that we need to reverse, we found that the executable do this.
+
+level09@SnowCrash:~$ ./level09 "0123"
+0246
+
+Let me explain, for each character in the argument string, it prints it + the index value.
+
+So the character "0" has the index 0, so it prints itself.
+The character "1" has the index 1, so it will print 1 + 1 => 2
+The character "2" has the index 2, so it will print 2 + 2 => 4
+The character "3" has the index 3, so it will print 3 + 3 => 6
+
+Same thing for alphabets.
+
+level09@SnowCrash:~$ ./level09 token
+tpmhr
+
+So the character "t" has the index 0, so it prints itself.
+The character "o" has the index 1, so it will print p + 1 => o (following the ascii table)
+The character "k" has the index 2, so it will print k + 2 => m
+The character "e" has the index 3, so it will print e + 3 => h
+The character "n" has the index 4, so it will print n + 4 => r
+
+So all we have to do is create a C program that take a sting a print every character minus its index.
+
+So we create a reverse.c in /tmp.
+
+level09@SnowCrash:~$ vi /tmp/reverse.c
+
+#include <unistd.h>
+#include <stdio.h>
+#include <fcntl.h>
+
+
+int main(int argc, char *argv[])
+{
+	int fd = open(argv[1], O_RDONLY);
+	int i = 0;
+	char ch[100];
+	int r;
+
+	r = read(fd, ch, 100);
+	while (ch[i])
+	{
+		printf("%c", ch[i] - i);
+		i++;
+	}
+	return (0);
+}
+
+We give it execution permission.
+
+level09@SnowCrash:~$ chmod 777 /tmp/reverse.c
+
+We compile it.
+
+level09@SnowCrash:~$ cd /tmp
+level09@SnowCrash:/tmp$ gcc reverse.c
+
+Then we execute it and give it token as an argument.
+
+level09@SnowCrash:/tmp$ ./a.out /home/user/level09/token
+f3iji1ju5yuevaus41q1afiuq
+
+And we got our token.
+
+So we log in into flag09
+
+level09@SnowCrash:~$ su flag09
+Password: f3iji1ju5yuevaus41q1afiuq
+Don't forget to launch getflag !
+
+We launch a getflag:
+
+flag09@SnowCrash:~$ getflag
+Check flag.Here is your token : s5cAJpM8ev6XHw998pRWG728z
+
+
+
+ 

